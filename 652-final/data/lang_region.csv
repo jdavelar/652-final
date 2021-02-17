@@ -1,0 +1,9 @@
+﻿Language region,
+E,Europe
+MEA,Middle East/Africa
+AP,Asia/Pacific
+NSA,North/South America
+X,Exclude (Universal)
+E/AP,Europe--Asia/Pacific
+NSA/AP,North/South America--Asia/Pacific
+E/MEA,Europe--Middle East/Africa
