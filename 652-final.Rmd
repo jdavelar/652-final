@@ -22,6 +22,8 @@ region    <-  read_csv(here("data", "lang_region.csv")) %>%
               clean_names()
 geo_code  <-  read_csv(here("data", "geo_codes.csv")) %>% 
               clean_names()
+tot_enroll <- read_csv(here("data", "subset_total_enrolls_1970-2016.csv")) %>% 
+              clean_names()
 ```
 
 ```{r Neat & Tidy}
@@ -48,5 +50,31 @@ geo_code <- geo_code %>%
                                    6 %in% geography_code ~ "Pacific",
                                    TRUE ~ as.character())))
 # I don't know how to figure this out right now. Check back later.
+```
+
+From proposal: 
+For this visualization I’ll be highlighting enrollment trends since 1958 by language program/course type. Language programs with the highest enrollment will be included and I will determine a cutoff point for the number of programs presented. Below is the simple line chart I used in a previous project to present enrollment overall. Including data about program type was beyond the capability I had with Excel and I’m looking forward to incorporating that variable in the visualization for this project. For my final version, I would like to learn how to create an animated time series plot that can show the shifting relationships between language programs. Something like a bar chart race may be effective.
+
+```{r Viz 1: Language & Time}
+# Getting data ready
+# First let's get enrollment data narrowed down
+ltviz <- enroll %>% 
+  select(srvy_year, language, )
+```
+
+From proposal:
+For this visualization I aim to create an interactive US map to present current differences in language program enrollment by geographic area. I’d like to incorporate more detailed information when hovering over a given area but am worried this may be at odds with simplifying the information given to the audience. I may decide later on to move in a different direction in order to keep information manageable.
+
+```{r Viz 2: Geography}
+
+```
+
+From proposal:
+My starting point for presenting information about institution type will be a simple, but clean, stacked density plot or histogram. One idea I have for presenting changes across time is to create several plots that can be navigated between using a tab that specifies the year.
+
+An alternate idea is to incorporate bubble charts, or a moving bubble graph, which would pull central information about all language enrollment into smaller clusters based on institution or degree type. As in my thinking about presenting geographic information, I am torn here balancing interactivity/fun factor and focus. Below is the simple line graph previously created with the data. One thing I wanted to point out with it is that I wasn’t able to present the data how I wanted—as a way to contrast institution type that shows the proportion compared to total enrollment, rather than simply presenting the number of individuals enrolled. Figuring out how to present the information in that manner will be a big consideration in the final product.
+
+```{r Viz 3: Institution Type}
+
 ```
 
