@@ -2,16 +2,25 @@
 title: "652-final"
 author: "Janette Avelar"
 output: html_document
+header-includes:
+    - \usepackage{animate}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      error = FALSE,
+                      include = FALSE)
 ```
 
 ```{r Load Library}
 library(here)
 library(tidyverse)
 library(janitor)
+library(gganimate)
+library(gifski)
+library(png)
 ```
 
 ```{r Data Import}
@@ -41,14 +50,14 @@ geo_code$geography_code <- factor(geo_code$geography_code,
                             levels = c(1:6))
 
 # Add column for region name
-geo_code <- geo_code %>% 
-  mutate(region = factor(case_when(1 %in% geography_code ~ "Northeast",
-                                   2 %in% geography_code ~ "Midwest",
-                                   3 %in% geography_code ~ "Southeast",
-                                   4 %in% geography_code ~ "Southwest",
-                                   5 %in% geography_code ~ "Rocky Mountain",
-                                   6 %in% geography_code ~ "Pacific",
-                                   TRUE ~ as.character())))
+# geo_code <- geo_code %>% 
+#   mutate(region = factor(case_when(1 %in% geography_code ~ "Northeast",
+#                                    2 %in% geography_code ~ "Midwest",
+#                                    3 %in% geography_code ~ "Southeast",
+#                                    4 %in% geography_code ~ "Southwest",
+#                                    5 %in% geography_code ~ "Rocky Mountain",
+#                                    6 %in% geography_code ~ "Pacific",
+#                                    TRUE ~ as.character())))
 # I don't know how to figure this out right now. Check back later.
 ```
 
@@ -59,8 +68,69 @@ For this visualization I’ll be highlighting enrollment trends since 1958 by la
 # Getting data ready
 # First let's get enrollment data narrowed down
 ltviz <- enroll %>% 
-  select(srvy_year, language, )
+  select(srvy_year, language, undergrad_total, grad_total) %>% 
+  group_by(language, srvy_year) %>% 
+  mutate(undergrad_total = sum(undergrad_total, na.rm = TRUE),
+         grad_total = sum(grad_total, na.rm = TRUE),
+         total = sum(undergrad_total, grad_total, na.rm = TRUE),
+         srvy_year = as.numeric(stringr::str_sub(srvy_year, 1, 4))) %>% 
+  ungroup() %>% 
+  distinct() %>% 
+  filter(srvy_year >= 1980) %>% 
+
+# Trying to figure out how to pull the top 10 ranked for each year
+
+  group_by(srvy_year) %>% 
+  mutate(rank = rank(-total),
+         value_rel = total/total[rank==1],
+         value_lbl = paste0(" ", total)) %>% 
+  group_by(language) %>% 
+  filter(rank <= 10) %>% 
+  ungroup()
+
+# Now let's try to prep the animation
+
+anim <- ggplot(ltviz, aes(rank, group = language)) +
+  geom_tile(aes(y = total, # orignally total/2
+                height = total,
+                width = 0.9), alpha = 0.6, color = NA) +
+  geom_text(aes(y = 0, label = paste(language, " ")),
+            vjust = 0.2, hjust = 1, size = 7) +
+  geom_text(aes(y = total, label = value_lbl, hjust = 0), size = 7) +
+  coord_flip(clip = "off", expand = TRUE) + # come back to this
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(size = .1, color = "gray"),
+        panel.grid.minor.x = element_line(size = .1, color = "gray"),
+        plot.title = element_text(size = 20, hjust = 0.5, face = "bold", color = "blue", vjust = -1),
+        plot.subtitle = element_text(size = 12, hjust = 0.5, face = "italic", color = "red"),
+        plot.background = element_blank(),
+        plot.margin = margin(1, 4, 1, 8, "cm")) +
+  transition_states(srvy_year, transition_length = 4, state_length = 1) +
+  ease_aes("sine-in-out") +
+  enter_fade() +
+  exit_fade() +
+  labs(title = "some shit by language: {closest_state}",
+       caption = "data Source:")
+
+# The animation
+animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
+        renderer = gifski_renderer("gganim.gif"))
+
 ```
+
+![caption](gganim.gif)
 
 From proposal:
 For this visualization I aim to create an interactive US map to present current differences in language program enrollment by geographic area. I’d like to incorporate more detailed information when hovering over a given area but am worried this may be at odds with simplifying the information given to the audience. I may decide later on to move in a different direction in order to keep information manageable.
