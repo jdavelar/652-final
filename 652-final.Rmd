@@ -191,7 +191,7 @@ anim <- ggplot(ltviz, aes(rank, group = language)) +
 
 # The animation
 animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000, # nframes = 350 pared down for playing
-        renderer = gifski_renderer("gganim.gif"))
+        renderer = gifski_renderer("viz1.gif"))
 
 
 # To Do List:
@@ -201,14 +201,16 @@ animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000, # nframes = 
  # - Mess with theme
  # - Try bounce-in-out
  # - Adjust total label so it has commas and is to the right of Spanish block
+ # - Decide if going with count or percents, and either way, need punctuation/symbol
+ # - ASL label is cut off WTFFFF
 
 
-# Question for you, my reviewer:
+# Question for you, reviewer(s):
 # Is it easier to understand this animation with a total, or should I opt instead for presenting
 # the ranking as a percentage of total language enrollment?
 ```
 
-![caption](gganim.gif)
+![caption](viz1.gif)
 
 ### Proposal 2:
 For this visualization I aim to create an interactive US map to present current differences in language program enrollment by geographic area. I’d like to incorporate more detailed information when hovering over a given area but am worried this may be at odds with simplifying the information given to the audience. I may decide later on to move in a different direction in order to keep information manageable.
@@ -354,6 +356,17 @@ viz3 <- ggplot(ic_vdata, aes(sector, students, group = sector)) +
 
 animate(viz3, nframes = 50, fps = 25, width = 1200, height = 1000, #nframes
         renderer = gifski_renderer("viz3.gif"))
+
+# To Do:
+ # - Figure out transition speed - looks odd
+ # - Figure out if it's possible to have dots rep n, not just plot n
+ # - Paths for plots? Idk, maybe give up on that idea.
+ # - Labels
+ # - All the aesthetics -- it's pretty ugly right now
+ # - Potentially a language dimension? Color by that rather than sector which is not doing much.
+ # - Annotations -- total count in plot title with year would be cool. Also percentage maybe of enrollments across type?
+ # - Play with dotplot more, really seems more ideal but just cannot figure that geom out.
+ # - Is interactivity too ambitious? Probably.
 
 ```
 
