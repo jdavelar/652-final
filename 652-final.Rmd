@@ -106,7 +106,7 @@ Visualization 1 comes from humble origins. My first attempt at working with the 
 Viz 1 still has a long way to go. From here, I plan to tweak colors and themes in order to make it more visually appealing and easy to read. I'm fairly happy with the speed, but there's a lot of small things that need to be adjusted. The y-axis, for one, needs a lot of work and commas need to be placed in the number. As a reviewer, there is one specific thing that would be really helpful for me if you could weigh in on: is it easier to understand this animation if the label next to the bars displays total enrollments or a breakdown of proportion (as the percentage that each language accounts for from total non-English language enrollments)?
 
 
-```{r Viz 1 Draft: Language & Time}
+```{r Viz 1 Draft: Language & Time, fig.height=10, fig.width=10}
 # Getting data ready
 # First let's get enrollment data narrowed down
 ltviz <- enroll %>% 
@@ -157,7 +157,7 @@ anim <- ggplot(ltviz, aes(rank, group = language)) +
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_line(size = .1, color = "gray"),
         panel.grid.minor.x = element_line(size = .1, color = "gray"),
-        plot.title = element_text(family = "Times", size = 40, hjust = 0.5, 
+        plot.title = element_text(family = "Times", size = 25, hjust = 0.5, 
                                   face = "bold", color = "black", vjust = -1),
         plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"),
         plot.background = element_blank(),
@@ -368,16 +368,16 @@ Oh, boy. This thing.
 Visualization 3 is similar in thought to the first visualization. It's meant to present trends over time, but this one is centered on institution type rather than language. The major divisions of public/private and 2-year/4-year+ are presented, and in the interest of readability I cut out the other variables I was originally interested in, including a breakdown by degree type.
 
 #### The Journey
-Do I even want to tell you about this journey? It's been a rough one just getting to the draft point. I had big dreams when I started. I had all sorts of ideas about flowing Sankey charts á la NYT ![you know the one](https://www.nytimes.com/interactive/2018/03/19/upshot/race-class-white-and-black-men.html). But it was not meant to be. Maybe in another time, in another world, maybe with some more EDS courses under my belt...
+Do I even want to tell you about this journey? It's been a rough one just getting to the draft point. I had big dreams when I started. I had all sorts of ideas about flowing Sankey charts á la NYT [you know the one](https://www.nytimes.com/interactive/2018/03/19/upshot/race-class-white-and-black-men.html). But it was not meant to be. Maybe in another time, in another world, maybe with some more EDS courses under my belt...
 
-I did find a ![really cool blog post](https://www.hvitfeldt.me/blog/recreate-sankey-flow-chart/) that walks through recreating the animated Sankey chart, and I attempted to follow along with it, but I wasn't able to wrap my head around their manipulation of functions and data enough to apply it for my own purposes.
+I did find a [really cool blog post](https://www.hvitfeldt.me/blog/recreate-sankey-flow-chart/) that walks through recreating the animated Sankey chart, and I attempted to follow along with it, but I wasn't able to wrap my head around their manipulation of functions and data enough to apply it for my own purposes.
 
 My second choice was to use geom_dotplot(), thinking I could animate an effect of dots bouncing in or out as count changes across years. What actually happened was a graph with a huge stack of dots so tall you couldn't actually see where they ended, which I was unable to fix. So I went with a safe choice instead, choosing geom_jitter() as the base for my animation. At least, I thought it was the safe choice, but I've yet to figure out how to get this visualization to display count in the manner I want.
 
 Next steps include extensive theming and figuring out how to slow the animation speed way down.
 
 
-```{r Viz 3: Institution Type}
+```{r Viz 3: Institution Type, fig.height=10, fig.width=10}
 # Figure out how to make an animated Sankey chart using the tot_enroll data with enroll data
 # If possible, divide into tabs by region and one for totals. By state with a search function
 # would also be super cool, but way outside of the time I have for this assignment.
@@ -498,16 +498,22 @@ ic_vdata$geography_code[ic_vdata$geography_code == 6] <- "Pacific"
 # Let's try geom_jitter across years
 viz3 <- ggplot(ic_vdata, aes(sector, students, group = sector)) +
           geom_jitter(aes(color = sector),
-                      legend = FALSE) +
+                      show.legend = FALSE) +
           transition_states(srvy_year, transition_length = 4, state_length = 1) + # need to slow down transition
           ease_aes("bounce-in-out") +
           enter_fade() +
           exit_fade() +
+  theme_minimal() +
+  theme(plot.title = element_text(family = "Times", size = 25, hjust = 0.5, 
+                                  face = "bold", color = "black", vjust = -1),
+        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"))
     labs(title = "Enrollment Across Institution Type: {closest_state}",
          subtitle = "1958-2016",
-       caption = "data Source:")
-
-animate(viz3, nframes = 350, fps = 25, width = 1200, height = 1000, #nframes
+       caption = "Data Source: National Center for Education Statistics")
+    # WHY THE HELL ARE MY TITLES NOT SHOWING UP???!!!!
+    
+# The animation    
+animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
         renderer = gifski_renderer("viz3.gif"))
 
 # To Do:
