@@ -37,6 +37,8 @@ ipeds_geo <-  read_csv(here("data", "ipeds_geo.csv")) %>%
               clean_names()
 inst_ic    <- read_csv(here("data", "inst_desc.csv")) %>% 
               clean_names()
+grand_tot  <- read_csv(here("data", "effy2017.csv")) %>% 
+              clean_names()
 ```
 
 # Heritage Language Maintenance
@@ -212,17 +214,153 @@ animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000, # nframes = 
 
 ![caption](viz1.gif)
 
-### Proposal 2:
-For this visualization I aim to create an interactive US map to present current differences in language program enrollment by geographic area. I’d like to incorporate more detailed information when hovering over a given area but am worried this may be at odds with simplifying the information given to the audience. I may decide later on to move in a different direction in order to keep information manageable.
+### Visualization 2:
+For this visualization I am creating a U.S. map color coded by density of students enrolled in language courses. The data used is from the year 2016--the most recent information I was able to find for both MLA and NCES data which were joined together to create the map. If I have enough time and am able to learn how, I plan to make the map interactive by allowing zoom in/out, plotting institutions, and creating a hover feature that gives institution name, total students enrolled, proportion of students in language courses, and top 5 languages being studied with numbers displayed. (Maybe that's far too much information and certainly feels too ambitious at the moment.)
 
 ```{r Viz 2: Geography}
+library(tidycensus)
+library(tigris)
+library(sf)
+library(maps) #needed
+library(mapproj) #needed
 
+# Map data for literal map
+states <- map_data("state")
+
+
+# Trying this alternate route b/c HI and AK???
+# install.packages("usmap")
+# library(usmap)
+# states <- plot_usmap(regions = "states")
+# str(usmap::us_map(regions = "states"))
+
+states %>% ggplot(aes(long, lat, map_id = region)) +
+  geom_map(map = states,
+           color = "gray80", fill = "gray30", size = 0.3) +
+  coord_map("ortho", orientation = c(39, -98, 0))
+
+# Adjusting enroll data for joining
+enroll_map <- enroll %>% 
+  select(c(2, 3, 5, 7, 11, 13, 14, 19)) %>% 
+  filter(srvy_year == 2016) %>% 
+  select(-c(3, 6, 7)) %>% #simplify further for test
+  group_by(nces_id) %>% 
+  mutate(inst_lang_total = sum(all_level_total, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  select(-c(2, 5)) %>% 
+  unique() %>% 
+  rename(unitid = nces_id)
+
+# Now adjust ipeds_geo data for joining
+enroll_geo <- ipeds_geo %>% 
+  select(c(1, 11, 12))
+
+# Join and find state prop
+## Back up!!! You need individual unitid data to map
+# prop = average enrollment/institution
+# map showing highest concentrations of enrollment per state by mean students enrolled in language courses? total lang enrolled/total enrolled and map points on top of that with institution level data if able to make it interactive (name/year, students per language for top 5 or something)
+enroll_map2 <- left_join(enroll_map, enroll_geo, by = "unitid")
+
+# Great, now let's get grand total enrollments to be able to calculate density
+grand_tot2 <- grand_tot %>% 
+  select(1,5) %>% 
+# Rename that var ew
+  rename(inst_total = efytotlt) %>% 
+  group_by(unitid) %>% 
+  mutate(inst_total = sum(inst_total)) %>% 
+  ungroup() %>% 
+  unique()
+
+# Join with joined data
+enroll_map_tidy <- left_join(enroll_map2, grand_tot2, by = "unitid") %>% 
+  
+  # Institutional prop
+  group_by(unitid) %>% 
+  mutate(inst_prop = inst_lang_total/inst_total) %>% 
+  ungroup()
+
+# This is beautiful, and now I'm going to mess it all up by butchering it into a 50 row tibble I can map using total state means. The work up to this point is to have a datset ready with the information I need for the plot below, and also with institution names, lats, and longs to add points to the map later if I'm able to.
+
+viz2 <- enroll_map_tidy %>% 
+  select(c(3, 8)) %>% 
+  group_by(state) %>% 
+  mutate(state_lang_prop = round(mean(inst_prop, na.rm = TRUE), digits = 3)) %>% 
+  ungroup() %>% 
+  select(-c(2)) %>% 
+  unique() %>% 
+  rename("region" = "state")
+
+# Rename all states to fit with above map data
+# Can't remember how to do it a convenient way, so going to do it a pain in the ass way.
+viz2$region <- recode(viz2$region,
+                     AL = "alabama",
+                     AK = "alaska",
+                     AZ = "arizona",
+                     AR = "arkansas",
+                     CA = "california",
+                     CO = "colorado",
+                     CT = "connecticut",
+                     DC = "district of columbia",
+                     DE = "delaware",
+                     FL = "florida",
+                     GA = "georgia",
+                     HI = "hawaii",
+                     ID = "idaho",
+                     IL = "illinois",
+                     IN = "indiana",
+                     IA = "iowa",
+                     KS = "kansas",
+                     KY = "kentucky",
+                     LA = "louisiana",
+                     ME = "maine",
+                     MD = "maryland",
+                     MA = "massachusetts",
+                     MI = "michigan",
+                     MN = "minnesota",
+                     MS = "mississippi",
+                     MO = "missouri",
+                     MT = "montana",
+                     NE = "nebraska",
+                     NV = "nevada",
+                     NH = "new hampshire",
+                     NJ = "new jersey",
+                     NM = "new mexico",
+                     NY = "new york",
+                     NC = "north carolina",
+                     ND = "north dakota",
+                     OH = "ohio",
+                     OK = "oklahoma",
+                     OR = "oregon",
+                     PA = "pennsylvania",
+                     RI = "rhode island",
+                     SC = "south carolina",
+                     SD = "south dakota",
+                     TN = "tennessee",
+                     TX = "texas",
+                     UT = "utah",
+                     VT = "vermont",
+                     VA = "virginia",
+                     WA = "washington",
+                     WV = "west virginia",
+                     WI = "wisconsin",
+                     WY = "wyoming")
+
+# left-join map data for plotting
+viz2_map <- left_join(states, viz2, by = "region")
+
+# Finally, time to make the map.
+viz2_map %>% 
+  ggplot(aes(long, lat, group = subregion)) +
+  geom_map(aes(map_id = region),
+           map = viz2_map,
+           color = "gray80", fill = "gray30", size = 0.3) +
+  coord_map("ortho", orientation = c(39, -98, 0)) +
+  geom_polygon(aes(group = group, fill = state_lang_prop) +
+                 scale_fill_viridis_c())
 ```
 
-### Proposal 3:
-My starting point for presenting information about institution type will be a simple, but clean, stacked density plot or histogram. One idea I have for presenting changes across time is to create several plots that can be navigated between using a tab that specifies the year.
+### Visualization 3:
 
-An alternate idea is to incorporate bubble charts, or a moving bubble graph, which would pull central information about all language enrollment into smaller clusters based on institution or degree type. As in my thinking about presenting geographic information, I am torn here balancing interactivity/fun factor and focus. Below is the simple line graph previously created with the data. One thing I wanted to point out with it is that I wasn’t able to present the data how I wanted—as a way to contrast institution type that shows the proportion compared to total enrollment, rather than simply presenting the number of individuals enrolled. Figuring out how to present the information in that manner will be a big consideration in the final product.
 
 ```{r Viz 3: Institution Type}
 # Figure out how to make an animated Sankey chart using the tot_enroll data with enroll data
