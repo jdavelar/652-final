@@ -187,6 +187,11 @@ animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
 
 ![Viz 1 Draft](viz1.gif)
 
+Wow this figure is awesome and I really like the way it looks!! The color choice is already very pleasing to the eye. 
+I am a bit confused about why there is always a gap between the left side of the top few bars and the y-axis. This feels a bit weird to me. I guess it might be related with geom_tile(). Would geom_bar() be a better choice? I also hope the year on the title could be either bigger or more obvious. 
+Towards the question at the end: I personally would prefer the total enrollment (the one you have currently) because 1) the percentage is not original data, and it would hide the fact that the number of non-english courses enrollment is increasing over the years; 2) it is relatively easy to grasp the percentage with the bar graph directly, so I feel the information is conveyed already.
+
+
 ### Visualization 2:
 For this visualization I am creating a U.S. map color coded by density of students enrolled in language courses. The data used is from the year 2016--the most recent information I was able to find for both Modern Language Association's (MLA) and National Center for Education Statistics (NCES) data which were joined together to create the map. 
 
@@ -362,6 +367,9 @@ ggsave("viz2.jpg", plot = viz2)
 
 ![Viz 2](viz2.jpg)
 
+I like the idea behind this figure and I am sure you will make it work with today's lecture! (Coincidentally we had the lecture about geographic data today.) Even if the last interactive idea is a bit ambitious, I feel you can definitive make a figure that when a mouse hover over each point, it shows the exact number/percentage, if that sounds somewhat easier but still interesting. I am not sure if you need both each data points (the black dots) and the heatmap of each state with the current version, but this might makes more sense later. 
+
+
 ### Visualization 3:
 Oh, boy. This thing.
 
@@ -506,11 +514,12 @@ viz3 <- ggplot(ic_vdata, aes(sector, students, group = sector)) +
   theme_minimal() +
   theme(plot.title = element_text(family = "Times", size = 25, hjust = 0.5, 
                                   face = "bold", color = "black", vjust = -1),
-        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"))
+        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black")) +
     labs(title = "Enrollment Across Institution Type: {closest_state}",
          subtitle = "1958-2016",
        caption = "Data Source: National Center for Education Statistics")
     # WHY THE HELL ARE MY TITLES NOT SHOWING UP???!!!!
+    # the "+" is missing after the theme. :)
     
 # The animation    
 animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
@@ -530,3 +539,15 @@ animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 ```
 
 ![Viz 3](viz3.gif)
+
+
+The idea behind this figure is interesting and I like the figure from the blog post that you linked. However, this figure is very very hard for me to understand. I am not sure if the dotted figure is the best way to show this, because I cannot grasp mean/range/change over time from this, especially for the 4 year institute. I personally feel maybe a box would work better in this situation. 
+
+Three areas of strength:
+1. Very detailed description makes everything easy to understand. All figures are telling a coherent story.
+2. Great choice of color palette makes all figures nice and clean. 
+3. The code has a lot of comments, which help me understand better overall. 
+
+Things I learned:
+1. I learned how to save git as a separate file and display it in the rstudio. 
+2. The flowing Sankey charts is very a interesting idea and I'm sure it will be very pretty!!!
