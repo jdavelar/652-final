@@ -121,6 +121,9 @@ ltviz <- enroll %>%
   filter(srvy_year >= 1980) %>% 
 
 # Trying to figure out how to pull the top 10 ranked for each year
+  
+#RL comment: maybe sort by the variables and then use slice_head(n = 10)
+  
 # Set up labels for ranking while you're at it
 
   group_by(srvy_year) %>% 
@@ -199,6 +202,13 @@ If I have enough time and am able to learn how, I hope to make the map interacti
 
 ```{r Viz 2: Geography}
 # Map data for literal map
+
+#another option:
+#install.packages("usmap")
+#library(usmap)
+#usmap::plot_usmap("states", labels = TRUE)
+#helpful documentation: https://rdrr.io/cran/usmap/f/vignettes/advanced-mapping.Rmd
+
 states <- map_data("state")
 
 states %>% ggplot(aes(long, lat, map_id = region)) +
