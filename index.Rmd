@@ -12,7 +12,7 @@ output:
 library(flexdashboard)
 ```
 
-Heritage Langauge Maintenance
+Heritage Language Maintenance
 =======================================================================
 
 Viz 1
