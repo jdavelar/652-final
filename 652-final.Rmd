@@ -23,6 +23,8 @@ library(gifski)
 library(png)
 library(maps)
 library(mapproj)
+library(transformr) # double check
+library(ggthemes)
 ```
 
 ```{r Data Import}
@@ -244,7 +246,7 @@ enroll_map_tidy <- left_join(enroll_map2, grand_tot2, by = "unitid") %>%
   ungroup()
 
 # This is beautiful, and now I'm going to mess it all up by butchering it into a 50 row
-# tibble I can map using total state means. The work up to this point is to have a datset
+# tibble I can map using total state means. The work up to this point is to have a dataset
 # ready with the information I need for the plot below, and also with institution names,
 # latitudes, and longitudes to add points to the map later if I'm able to.
 
@@ -326,7 +328,7 @@ viz2 <-
     scale_fill_viridis_c(option = "magma", direction = -1) + # figure out how to get palette in here
   geom_point(aes(lon1516, lat1516, group = unitid), 
              data = enroll_map_tidy, alpha = 0.07, size = 0.5) + # potential interactive points?
-  theme_minimal() +
+  theme_map() +
      theme(
     #     axis.line = element_blank(),
     #     axis.text.x = element_blank(),
@@ -506,7 +508,7 @@ viz3 <- ggplot(ic_vdata, aes(sector, students, group = sector)) +
   theme_minimal() +
   theme(plot.title = element_text(family = "Times", size = 25, hjust = 0.5, 
                                   face = "bold", color = "black", vjust = -1),
-        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"))
+        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black")) +
     labs(title = "Enrollment Across Institution Type: {closest_state}",
          subtitle = "1958-2016",
        caption = "Data Source: National Center for Education Statistics")
@@ -530,3 +532,67 @@ animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 ```
 
 ![Viz 3](viz3.gif)
+
+```{r Viz 1 Final}
+
+```
+
+```{r Viz 2 Final}
+
+```
+
+```{r Viz 3 Final}
+# sector totals?
+viz3f_data <- ic_vdata %>% 
+  select(-c(1, 2, 3)) %>% 
+  group_by(srvy_year, sector) %>% 
+  mutate(sector_total = sum(students)) %>% 
+  ungroup() %>% 
+  select(-c(2)) %>% 
+  unique() %>% 
+    mutate(rank = rank(-sector_total),
+         value_rel = sector_total/sector_total[rank==1],
+         value_lbl = paste0(" ", sector_total))
+
+
+viz3f <- ggplot(viz3f_data, aes(srvy_year, sector_total, 
+                                group = sector,
+                                color = sector,
+                                size = sector_total,
+                                alpha = 0.4)) +
+  scale_color_brewer(palette = "Dark2") +
+  geom_line() +
+  geom_point() +
+  scale_size(range = c(10, 34)) +
+    # geom_text(aes(y = 0, label = paste(sector, " ")),
+    #         vjust = 0.2, hjust = 1, size = 7) +
+  geom_text(aes(x = srvy_year, y = sector_total, label = value_lbl, hjust = 0), size = 5) + 
+  transition_states(srvy_year, transition_length = 10, state_length = 1) +
+          ease_aes("bounce-in-out") +
+          enter_fade() +
+          exit_fade() +
+  transition_reveal(srvy_year) +
+  theme_minimal() +
+  theme(plot.title = element_text(family = "Times", size = 20, hjust = 0.5, 
+                                  face = "bold", color = "black", vjust = -1),
+        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"),
+        legend.position = "none") +
+    labs(title = "Enrollment Across Institution Type: {frame_along}",
+         caption = "Data Source: National Center for Education Statistics")
+    
+# The animation    
+animate(viz3f, nframes = 350, fps = 25, width = 800, height = 600, #nframes
+        renderer = gifski_renderer("viz3_final.gif"))
+
+# To Do:
+ # - Figure out transition speed
+ # - Figure out if it's possible to have dots rep n, not just plot n
+ # - Paths for plots? Idk, maybe give up on that idea.
+ # - Labels
+ # - All the aesthetics -- it's pretty ugly right now
+ # - Potentially a language dimension? Color by that rather than sector which is not doing much.
+ # - Annotations -- total count in plot title with year would be cool. Also percentage maybe of enrollments across type?
+ # - Play with dotplot more, really seems more ideal but just cannot figure that geom out.
+ # - Is interactivity too ambitious? Probably.
+```
+![](viz3_final.gif)
