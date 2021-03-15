@@ -1,19 +1,27 @@
 ---
-title: "Untitled"
+title: "Heritage Language Maintenance in Higher Education"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    social: menu
+    source_code: https://github.com/jdavelar/652-final.git
 ---
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
 ```
 
+Heritage Langauge Maintenance
+=======================================================================
+
+Viz 1
+=======================================================================
+
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Draft Version
 
 ```{r}
 
@@ -22,15 +30,117 @@ Column {data-width=650}
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Final Version
 
 ```{r}
 
 ```
 
-### Chart C
+
+Viz 2
+=====================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Draft Version
+
+```{r Viz 1 Draft: Language & Time, fig.height=10, fig.width=10}
+# Getting data ready
+# First let's get enrollment data narrowed down
+ltviz <- enroll %>% 
+  select(srvy_year, language, undergrad_total, grad_total) %>% 
+  group_by(language, srvy_year) %>% 
+  mutate(undergrad_total = sum(undergrad_total, na.rm = TRUE),
+         grad_total = sum(grad_total, na.rm = TRUE),
+         total = sum(undergrad_total, grad_total, na.rm = TRUE),
+         srvy_year = as.numeric(stringr::str_sub(srvy_year, 1, 4))) %>% 
+  ungroup() %>% 
+  distinct() %>% 
+  filter(srvy_year >= 1980) %>% 
+
+# Trying to figure out how to pull the top 10 ranked for each year
+# Set up labels for ranking while you're at it
+
+  group_by(srvy_year) %>% 
+  mutate(rank = rank(-total),
+         value_rel = total/total[rank==1],
+         value_lbl = paste0(" ", total)) %>% 
+  group_by(language) %>% 
+  filter(rank <= 10) %>% 
+  ungroup()
+
+# Now let's try to prep the animation
+
+anim <- ggplot(ltviz, aes(rank, group = language)) +
+  geom_tile(aes(y = total,
+                height = total,
+                width = 0.9, fill = language), alpha = 0.6) + 
+  #scale_fill_brewer(palette = "Set2") + # Some vars are not showing up wtf
+  geom_text(aes(y = 0, label = paste(language, " ")),
+            vjust = 0.2, hjust = 1, size = 7) +
+  geom_text(aes(y = total, label = value_lbl, hjust = 0), size = 7) + 
+  coord_flip(clip = "off", expand = TRUE) + # come back to this
+  scale_x_reverse() +
+  theme_minimal() +
+  theme(axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(size = .1, color = "gray"),
+        panel.grid.minor.x = element_line(size = .1, color = "gray"),
+        plot.title = element_text(family = "Times", size = 25, hjust = 0.5, 
+                                  face = "bold", color = "black", vjust = -1),
+        plot.subtitle = element_text(size = 20, hjust = 0.5, face = "italic", color = "black"),
+        plot.background = element_blank(),
+        plot.margin = margin(1, 4, 1, 8, "cm")) +
+  transition_states(srvy_year, transition_length = 4, state_length = 1) + # try different transition length?
+  ease_aes("sine-in-out") +
+  enter_fade() +
+  exit_fade() +
+  labs(title = "Non-English Language Course Enrollment in Higher Ed Institutions: {closest_state}",
+       caption = "Data Source: National Center for Education Statistics")
+
+# The animation
+animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
+        renderer = gifski_renderer("viz1.gif"))
+```
+
+![Viz 1 Draft](viz1.gif)
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Final Version
 
 ```{r}
 
 ```
 
+Viz 3
+=====================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Draft Version
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Final Version
+
+```{r}
+
+```
