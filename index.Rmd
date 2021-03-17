@@ -4,6 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: scroll
+    theme: united # Mess with theme
     social: menu
     source_code: https://github.com/jdavelar/652-final.git
 ---
@@ -19,6 +20,7 @@ library(png)
 library(maps)
 library(mapproj)
 library(ggthemes)
+library(ragg) #?????
 ```
 
 ```{r Data Import, include = FALSE}
@@ -39,24 +41,36 @@ grand_tot  <- read_csv(here("data", "effy2017.csv")) %>%
               clean_names()
 ```
 
+```{r}
+# TO DO
+# - Add heritage language information
+# - Theming for dashboard
+# - Add sidebar info
+# - Double check project purpose tabs for coherence
+# - Change Viz info and journeys as needed
+```
+
+
 Sidebar Title {.sidebar}
 ======================================================================
+<!-- Figure out something to put in sidebar -->
 [Data source:](https://www.mla.org/Resources/Research/Surveys-Reports-and-Other-Documents/Teaching-Enrollments-and-Programs/Enrollments-in-Languages-Other-Than-English-in-United-States-Institutions-of-Higher-Education) National Center for Education Statistics Language Enrollment Database from 1958-2016.
 
 Project Purpose
 =======================================================================
+### Welcome!
+
+![](welcome.jpg)
+
 ### What is the purpose of this project?
 
-The visualizations  are intended to convey information about enrollment trends in higher education institutions for non-English language courses in the United States. The data used was gathered from a Modern Language Association national survey implemented periodically between 1958 and 2016 which gathers information about each individual institution, including languages offered, enrollment numbers, institution type, geographic information, history of the institution's name, and accreditation.
+The visualizations are intended to convey information about enrollment trends in higher education institutions for non-English language courses in the United States. The data used was gathered from a Modern Language Association national survey implemented periodically between 1958 and 2016 which gathers information about each individual institution, including languages offered, enrollment numbers, institution type, geographic information, history of the institution's name, and accreditation.
 
-The reason I chose this particular dataset, which does not highlight information about heritage language programs is mainly because that data does not exist on this level. Existing research and existing heritage language programs are limited and suffer a significant challenge in obscurity. Higher education institutions that *do* opt to offer heritage language courses often house them within larger modern language departments as a series of courses taken before moving into advanced language courses with second-language learners, which can significantly limit potential enrollment and interest. How do you pursue a program you don't even know exists?
+I chose this dataset despite the fact that it does not highlight information about heritage language programs, which are my area of interest, primarily because that data does not exist on this level. Existing research and existing heritage language programs are limited and suffer a significant challenge in obscurity. Higher education institutions that *do* opt to offer heritage language courses often house them within larger modern language departments as a series of courses taken before moving into advanced language courses with second-language learners, which can significantly limit potential enrollment and interest. How do you pursue a program you don't even know exists?
 
 This presents a few problems. Firstly, we don't have a real idea of how many institutions currently offer any type of heritage language support system(s). Secondly, even when they are present, we don't have an idea of how often they're utilized, what kind of interest they generate among students, what the major goals and interests of current programs are, and what characterizes current heritage language pedagogical practices outside of limited case studies that are not generalizable on their own. 
 
-The hope is that this data offers a starting point. Though we can't make any inferences about heritage learners specifically, what we can understand looking at these enrollment trends are which languages are already showing stable or growing trends enough so that adding additional support systems could be more easily justifiable and implementable. It shows us which geographic areas in the country show significantly higher language learning trends as a way to approach a given area for closer scrutiny. Taking into account the limitations of this data, any sweeping generalizations about the types of programs that should or should not be implemented is not a responsible claim to make. Rather, what this data shows us is a starting point from which to argue for further data collection that can help us understand a given institution’s language program needs as reflected by student utilization and motivation. I would argue one potential avenue for research this makes room for is characterizing the student data gathered for potential recruitment efforts. Another would be cross-institutional collaboration between language departments and other departments to create course offerings that supplement student learning in other areas through non-English languages. 
-
-
-[move this somewhere else] As it relates to the topic of Spanish HLPs, the data is optimistic as it shows that further research into Spanish language programs is not unfounded as SC accounts for such a large portion of LCs.
+The hope is that the larger language trends offer a starting point. Though we can't make any inferences about heritage learners specifically, what we can understand looking at enrollment trends are which languages are already showing stable or growing trends enough that adding additional support systems could be more easily justifiable and implementable. It also tells us which geographic areas in the country show significantly higher language learning trends as a way to approach a given area for closer scrutiny. Taking into account the limitations of this data, any sweeping generalizations about the types of programs that should or should not be implemented is not a responsible claim to make. Rather, what this data shows us is a perspective from which to argue for further data collection that can help us understand a given institution’s language program needs as reflected by student utilization and motivation. For example, one potential avenue this makes room for is characterizing the student data gathered for potential recruitment efforts. Another would be cross-institutional collaboration between language departments and other departments to create course offerings that supplement student learning in other areas through non-English languages. 
 
 Heritage Language Maintenance {data-orientation=rows}
 =======================================================================
@@ -78,24 +92,10 @@ Row
 ### Why does it matter?
 [and here]
 
-Viz 1 {data-orientation=rows}
+Viz 1
 =======================================================================
 
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Final Version
-
-```{r}
-
-```
-
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Draft Version
-
-```{r}
+```{r Viz 1 Draft Data Prep}
 # Getting data ready
 # First let's get enrollment data narrowed down
 ltviz <- enroll %>% 
@@ -119,8 +119,114 @@ ltviz <- enroll %>%
   group_by(language) %>% 
   filter(rank <= 10) %>% 
   ungroup()
+```
 
-# Now let's try to prep the animation
+```{r Viz 1 Final Data Prep}
+# Recode languages to lowercase
+ltviz$language[ltviz$language == "FRENCH"] <- "French"
+ltviz$language[ltviz$language == "GERMAN"] <- "German"
+ltviz$language[ltviz$language == "GREEK, ANCIENT"] <- "Greek"
+ltviz$language[ltviz$language == "HEBREW"] <- "Hebrew"
+ltviz$language[ltviz$language == "LATIN"] <- "Latin"
+ltviz$language[ltviz$language == "SPANISH"] <- "Spanish"
+ltviz$language[ltviz$language == "CHINESE"] <- "Chinese"
+ltviz$language[ltviz$language == "HEBREW, BIBLICAL"] <- "Hebrew"
+ltviz$language[ltviz$language == "JAPANESE"] <- "Japanese"
+ltviz$language[ltviz$language == "RUSSIAN"] <- "Russian"
+ltviz$language[ltviz$language == "AMERICAN SIGN LANGUAGE (ASL)"] <- "ASL"
+ltviz$language[ltviz$language == "ITALIAN"] <- "Italian"
+ltviz$language[ltviz$language == "ARABIC"] <- "Arabic"
+```
+
+
+Column {.tabset }
+-----------------------------------------------------------------------
+
+### Final Version
+
+```{r Viz 1 Final Version}
+# Animation Prep
+
+# Color blind safe palette 12-value for manual fill
+#c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+#"#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+# Main plot
+anim_1f <- ggplot(ltviz) +
+  aes(xmin = 0,
+      xmax = total/1000000) +
+  aes(ymin = rank - .45,
+      ymax = rank + .45,
+      y = rank) +
+  facet_wrap(~srvy_year) +
+  geom_rect(alpha = 0.8) + 
+  aes(fill = language) +
+  scale_fill_manual(values = c("#888888", "#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255", "#661100", "#6699CC")) +
+  scale_x_continuous(
+    limits = c(-1000, 4000),
+    breaks = c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000)) +
+  geom_text(col = "#8e8d8a",
+            hjust = "right",
+            aes(label = language),
+            x = -50) +
+  scale_y_reverse() +
+  labs(fill = NULL) +
+  labs(x = "Enrolled students (in millions)") +
+  labs(y = "") +
+  
+# Theming
+  theme_classic(base_family = "Verdana") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = "none",
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        panel.grid.major.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.x = element_line(size = .1, color = "#d8c3a5"),
+        plot.title = element_text(size = 15, hjust = 0.5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a")) +
+  
+# Labels
+    labs(title = "Spanish Continues to Dominate Language \n Enrollment in Higher Education",
+         subtitle = "Enrollments in Spanish courses at the postsecondary level have continuously increased in
+         the United States at a far greater rate than the other top 10 languages studied. Spanish 
+         programs show great potential for expansion and incorporation of heritage language study.",
+         caption = "Data Source: \n National Center for Education Statistics") +
+  
+# Animation
+
+# anim_1f +
+  facet_null() +
+  scale_x_continuous(
+    limits = c(-500, 4000),
+    breaks = c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000)) +
+  geom_text(x = 2500 , y = -10,
+            family = "Helvetica",
+            aes(label = as.character(srvy_year)),
+            size = 30, col = "#e98074") +
+  aes(group = language) +
+  gganimate::transition_time(srvy_year)
+
+#x-axis needs theme color
+
+# Save animation
+animate(anim_1f, nframes = 350, fps = 25, width = 500, height = 500,
+        renderer = gifski_renderer("viz1_final.gif"))
+
+```
+
+![Viz 1 Final](viz1_final.gif)
+
+Column
+-----------------------------------------------------------------------
+
+### Draft Version
+
+```{r Viz 1 Draft Version}
+# Prep the animation
 
 anim <- ggplot(ltviz, aes(rank, group = language)) +
   geom_tile(aes(y = total,
@@ -163,7 +269,7 @@ animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
         renderer = gifski_renderer("viz1.gif"))
 ```
 
-![Viz 1 Draft](viz1.gif)
+![Viz 1 Draft Version](viz1.gif)
 
 Row 
 ----------------------------------------------------------------------
@@ -175,24 +281,10 @@ Visualization 1 comes from humble origins. My first attempt at working with the 
 
 Viz 1 still has a long way to go. From here, I plan to tweak colors and themes in order to make it more visually appealing and easy to read. I'm fairly happy with the speed, but there's a lot of small things that need to be adjusted. The y-axis, for one, needs a lot of work and commas need to be placed in the number. As a reviewer, there is one specific thing that would be really helpful for me if you could weigh in on: is it easier to understand this animation if the label next to the bars displays total enrollments or a breakdown of proportion (as the percentage that each language accounts for from total non-English language enrollments)?
 
-Viz 2 {data-orientation=rows}
+Viz 2
 =====================================================================
 
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Final Version
-
-```{r Viz 1 Draft: Language & Time, fig.height=10, fig.width=10}
-
-```
-
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Draft Version
-
-```{r}
+```{r Viz 2 Draft Data Prep}
 # Map data for literal map
 states <- map_data("state")
 
@@ -309,7 +401,79 @@ viz2$region <- recode(viz2$region,
 
 # Join geo+enrollment data with map data for plotting
 viz2_map <- left_join(states, viz2, by = "region")
+```
 
+```{r Viz 2 Final Data Prep}
+library(statebins)
+
+# Adjusting enrollment data by collapsing totals per year by institution
+viz2f_data <- enroll %>% 
+  select(srvy_year, nces_id, all_level_total, state) %>%
+  group_by(nces_id, srvy_year) %>% 
+  mutate(enrollments = sum(all_level_total, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  select(-c(3)) %>% 
+  unique() %>% 
+  rename(unitid = nces_id) %>%  # Rename for joining
+  group_by(srvy_year, state) %>% 
+  mutate(state_total = sum(enrollments), # State total enrollments by year
+         inst_n = n()) %>% # Number of institutions in each state
+  ungroup() %>% 
+  group_by(srvy_year) %>% 
+  mutate(nat_total = sum(enrollments)) %>%  # National total by year to get state average
+  ungroup() %>% 
+  group_by(srvy_year, state) %>% 
+  mutate(state_mean = state_total/nat_total) %>% # State average
+  filter(srvy_year == 2016) 
+```
+
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Final Version
+
+```{r Viz 2 Final Version}
+# Some labels for the 
+
+# Plotting with state
+viz2f <-
+statebins(viz2f_data,
+          value_col = "state_mean",
+          name = "Percentage of enrollments",
+          round = TRUE,
+          palette = "Reds",
+          direction = 1) +
+  labs(title = "CA, NY, and TX Have Highest Language \n Enrollments in Higher Education - 2016",
+       subtitle = "A darker color indicates larger percentage of course enrollments.",
+       caption = "Data Source: 
+       National Center for Education Statistics") +
+  theme_classic(base_family = "Verdana") +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        plot.title = element_text(size = 15, hjust = .5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a"),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+
+# If time allows, add labels with percentage for CA, NY, and TX.
+
+ggsave("viz2_final.jpg", plot = viz2f)
+```
+
+![Viz 2 Final](viz2_final.jpg)
+
+Column
+-----------------------------------------------------------------------
+
+### Draft Version
+
+```{r Viz 2 Draft Version}
 # Finally, time to make the map.
 viz2 <-
   ggplot(viz2_map, aes(long, lat, group = region)) +
@@ -348,24 +512,10 @@ ggsave("viz2.jpg", plot = viz2)
 
 ![Viz 2](viz2.jpg)
 
-Viz 3 {data-orientation=rows}
+Viz 3
 =====================================================================
 
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Final Version
-
-```{r}
-
-```
-
-Row {.tabset data-height=500}
------------------------------------------------------------------------
-
-### Draft 1
-
-```{r}
+```{r Viz 3 Draft Data Prep}
 # Figure out how to make an animated Sankey chart using the tot_enroll data with enroll data
 # If possible, divide into tabs by region and one for totals. By state with a search function
 # would also be super cool, but way outside of the time I have for this assignment.
@@ -480,9 +630,28 @@ ic_vdata$geography_code[ic_vdata$geography_code == 6] <- "Pacific"
 
 
 # Scratch all that-- IT'S NOT WORKING
+```
+
+```{r Viz 3 Final Data Prep}
+
+```
 
 
+Column
+-----------------------------------------------------------------------
 
+### Final Version
+
+```{r Viz 3 Final Version}
+
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Draft 1
+
+```{r Viz 3 Draft Version}
 # Let's try geom_jitter across years
 viz3 <- ggplot(ic_vdata, aes(sector, students, group = sector)) +
           geom_jitter(aes(color = sector),
@@ -507,12 +676,12 @@ animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 
 ![Viz 3](viz3.gif)
 
-Row {.tabset data-height=500}
+Column
 -----------------------------------------------------------------------
 
 ### Draft 2
 
-```{r}
+```{r Viz 3 Fun Version}
 # sector totals?
 viz3f_data <- ic_vdata %>% 
   select(-c(1, 2, 3)) %>% 

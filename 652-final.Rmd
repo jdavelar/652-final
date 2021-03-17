@@ -108,7 +108,7 @@ Visualization 1 comes from humble origins. My first attempt at working with the 
 Viz 1 still has a long way to go. From here, I plan to tweak colors and themes in order to make it more visually appealing and easy to read. I'm fairly happy with the speed, but there's a lot of small things that need to be adjusted. The y-axis, for one, needs a lot of work and commas need to be placed in the number. As a reviewer, there is one specific thing that would be really helpful for me if you could weigh in on: is it easier to understand this animation if the label next to the bars displays total enrollments or a breakdown of proportion (as the percentage that each language accounts for from total non-English language enrollments)?
 
 
-```{r Viz 1 Draft: Language & Time, fig.height=10, fig.width=10}
+```{r}
 # Getting data ready
 # First let's get enrollment data narrowed down
 ltviz <- enroll %>% 
@@ -174,7 +174,6 @@ anim <- ggplot(ltviz, aes(rank, group = language)) +
 # The animation
 animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
         renderer = gifski_renderer("viz1.gif"))
-
 
 # To Do List:
  # - lowercase language text
