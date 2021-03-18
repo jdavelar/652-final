@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = FALSE,
 ```
 
 ```{r Load Library}
+library(flexdashboard)
 library(here)
 library(tidyverse)
 library(janitor)
@@ -23,8 +24,9 @@ library(gifski)
 library(png)
 library(maps)
 library(mapproj)
-library(transformr) # double check
 library(ggthemes)
+library(statebins)
+library(ragg) # R Kept telling me I needed this loaded but I'm not sure why?
 ```
 
 ```{r Data Import}
@@ -108,7 +110,7 @@ Visualization 1 comes from humble origins. My first attempt at working with the 
 Viz 1 still has a long way to go. From here, I plan to tweak colors and themes in order to make it more visually appealing and easy to read. I'm fairly happy with the speed, but there's a lot of small things that need to be adjusted. The y-axis, for one, needs a lot of work and commas need to be placed in the number. As a reviewer, there is one specific thing that would be really helpful for me if you could weigh in on: is it easier to understand this animation if the label next to the bars displays total enrollments or a breakdown of proportion (as the percentage that each language accounts for from total non-English language enrollments)?
 
 
-```{r}
+```{r Viz 1 Version 1}
 # Getting data ready
 # First let's get enrollment data narrowed down
 ltviz <- enroll %>% 
@@ -188,6 +190,98 @@ animate(anim, nframes = 350, fps = 25, width = 1200, height = 1000,
 
 ![Viz 1 Draft](viz1.gif)
 
+
+```{r Viz 1 Final Version Data}
+# Recode languages to lowercase
+ltviz$language[ltviz$language == "FRENCH"] <- "French"
+ltviz$language[ltviz$language == "GERMAN"] <- "German"
+ltviz$language[ltviz$language == "GREEK, ANCIENT"] <- "Greek"
+ltviz$language[ltviz$language == "HEBREW"] <- "Hebrew"
+ltviz$language[ltviz$language == "LATIN"] <- "Latin"
+ltviz$language[ltviz$language == "SPANISH"] <- "Spanish"
+ltviz$language[ltviz$language == "CHINESE"] <- "Chinese"
+ltviz$language[ltviz$language == "HEBREW, BIBLICAL"] <- "Hebrew"
+ltviz$language[ltviz$language == "JAPANESE"] <- "Japanese"
+ltviz$language[ltviz$language == "RUSSIAN"] <- "Russian"
+ltviz$language[ltviz$language == "AMERICAN SIGN LANGUAGE (ASL)"] <- "ASL"
+ltviz$language[ltviz$language == "ITALIAN"] <- "Italian"
+ltviz$language[ltviz$language == "ARABIC"] <- "Arabic"
+```
+
+```{r Viz 1 Final Version Plot}
+# Animation Prep
+
+# Color blind safe palette 12-value for manual fill
+#c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+#"#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+# Main plot
+anim_1f <- ggplot(ltviz) +
+  aes(xmin = 0,
+      xmax = total/1000000) +
+  aes(ymin = rank - .45,
+      ymax = rank + .45,
+      y = rank) +
+  facet_wrap(~srvy_year) +
+  geom_rect(alpha = 0.8) + 
+  aes(fill = language) +
+  scale_fill_manual(values = c("#888888", "#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255", "#661100", "#6699CC")) +
+  scale_x_continuous(
+    limits = c(-1000, 4000),
+    breaks = c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000)) +
+  geom_text(col = "#8e8d8a",
+            hjust = "right",
+            aes(label = language),
+            x = -50) +
+  scale_y_reverse() +
+  labs(fill = NULL) +
+  labs(x = "Enrolled students (in millions)") +
+  labs(y = "") +
+  
+# Theming
+  theme_classic(base_family = "Verdana") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = "none",
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        panel.grid.major.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.x = element_line(size = .1, color = "#d8c3a5"),
+        plot.title = element_text(size = 15, hjust = 0.5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a")) +
+  
+# Labels
+    labs(title = "Spanish Continues to Dominate Language \n Enrollment in Higher Education",
+         subtitle = "Enrollments in Spanish courses at the postsecondary level have continuously increased in
+         the United States at a far greater rate than the other top 10 languages studied. Spanish 
+         programs show great potential for expansion and incorporation of heritage language study.",
+         caption = "Data Source: \n National Center for Education Statistics") +
+  
+# Animation
+
+# anim_1f +
+  facet_null() +
+  scale_x_continuous(
+    limits = c(-500, 4000),
+    breaks = c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000)) +
+  geom_text(x = 2500 , y = -10,
+            family = "Helvetica",
+            aes(label = as.character(srvy_year)),
+            size = 30, col = "#e98074") +
+  aes(group = language) +
+  gganimate::transition_time(srvy_year)
+
+#x-axis needs theme color
+
+# Save animation
+animate(anim_1f, nframes = 350, fps = 25, width = 500, height = 500,
+        renderer = gifski_renderer("viz1_final.gif"))
+
+```
+
 ### Visualization 2:
 For this visualization I am creating a U.S. map color coded by density of students enrolled in language courses. The data used is from the year 2016--the most recent information I was able to find for both Modern Language Association's (MLA) and National Center for Education Statistics (NCES) data which were joined together to create the map. 
 
@@ -198,7 +292,7 @@ The next step for the visualization is to actually make it do what it's supposed
 
 If I have enough time and am able to learn how, I hope to make the map interactive by allowing zoom in/out, plotting institutions, and creating a hover feature that gives institution name, total students enrolled, proportion of students in language courses, and top 5 languages being studied with numbers displayed. I do wonder if that's too much information for this plot though, and in full transparency, it feels far too ambitious at the moment.
 
-```{r Viz 2: Geography}
+```{r Viz 2 Version 1: Geography}
 # Map data for literal map
 states <- map_data("state")
 
@@ -362,6 +456,61 @@ ggsave("viz2.jpg", plot = viz2)
 ```
 
 ![Viz 2](viz2.jpg)
+
+```{r Viz 2 Final Data Prep}
+# Adjusting enrollment data by collapsing totals per year by institution
+viz2f_data <- enroll %>% 
+  select(srvy_year, nces_id, all_level_total, state) %>%
+  group_by(nces_id, srvy_year) %>% 
+  mutate(enrollments = sum(all_level_total, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  select(-c(3)) %>% 
+  unique() %>% 
+  rename(unitid = nces_id) %>%  # Rename for joining
+  group_by(srvy_year, state) %>% 
+  mutate(state_total = sum(enrollments), # State total enrollments by year
+         inst_n = n()) %>% # Number of institutions in each state
+  ungroup() %>% 
+  group_by(srvy_year) %>% 
+  mutate(nat_total = sum(enrollments)) %>%  # National total by year to get state average
+  ungroup() %>% 
+  group_by(srvy_year, state) %>% 
+  mutate(state_mean = state_total/nat_total) %>% # State average
+  filter(srvy_year == 2016) 
+```
+
+```{r Viz 2 Final Version Plot}
+# Some labels for the 
+
+# Plotting with state
+viz2f <-
+statebins(viz2f_data,
+          value_col = "state_mean",
+          name = "Percentage of enrollments",
+          round = TRUE,
+          palette = "Reds",
+          direction = 1) +
+  labs(title = "CA, NY, and TX Have Highest Language \n Enrollments in Higher Education (2016)",
+       subtitle = "A darker color indicates larger percentage of course enrollments.",
+       caption = "Data Source: 
+       National Center for Education Statistics") +
+  theme_classic(base_family = "Verdana") +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        plot.title = element_text(size = 15, hjust = .5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a"),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+
+# If time allows, add labels with percentage for CA, NY, and TX.
+
+ggsave("viz2_final.jpg", plot = viz2f)
+```
 
 ### Visualization 3:
 Oh, boy. This thing.
@@ -532,15 +681,7 @@ animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 
 ![Viz 3](viz3.gif)
 
-```{r Viz 1 Final}
-
-```
-
-```{r Viz 2 Final}
-
-```
-
-```{r Viz 3 Final}
+```{r Viz 3 Horrible Version}
 # sector totals?
 viz3f_data <- ic_vdata %>% 
   select(-c(1, 2, 3)) %>% 
@@ -595,3 +736,98 @@ animate(viz3f, nframes = 350, fps = 25, width = 800, height = 600, #nframes
  # - Is interactivity too ambitious? Probably.
 ```
 ![](viz3_final.gif)
+```{r Viz 3 Final Data Prep}
+# Join datasets to include geography codes, enrollment, students, and sector
+viz3final_data <- left_join(ic_join, ic, by = "unitid") %>% 
+  select(-c(2, 6, 8)) %>% 
+  group_by(unitid, srvy_year) %>% 
+  mutate(all_level_total = sum(all_level_total, na.rm = T)) %>% 
+  ungroup() %>% 
+  unique() %>% 
+  mutate(avg_enroll = all_level_total/students) %>%  # average enrollment
+  filter(sector == "4 Year Public" |
+         sector == "2 Year Public" |
+         sector == "4 Year Private" |
+         sector == "2 Year Private") # snag variables I'm interested in
+
+# Recode geo_code
+viz3final_data$geography_code[viz3final_data$geography_code == 1] <- "Northeast"
+viz3final_data$geography_code[viz3final_data$geography_code == 2] <- "Midwest"
+viz3final_data$geography_code[viz3final_data$geography_code == 3] <- "Southeast"
+viz3final_data$geography_code[viz3final_data$geography_code == 4] <- "Southwest"
+viz3final_data$geography_code[viz3final_data$geography_code == 5] <- "Rocky Mountain"
+viz3final_data$geography_code[viz3final_data$geography_code == 6] <- "Pacific"
+```
+
+```{r Viz 3 Final Plot}
+# Final plot
+viz3f_ne <-
+ggplot(viz3final_data, aes(avg_enroll, color = sector)) +
+  geom_density(aes(fill = sector), alpha = 0.2) +
+  scale_x_continuous(lim = c(-.1, 1),
+                     labels = scales::percent) +
+  ylim(0, 40) +
+  scale_color_manual(values = c("#88CCEE", "#DDCC77", "#44AA99", "#CC6677")) +
+  scale_fill_manual(values = c("#88CCEE", "#DDCC77", "#44AA99", "#CC6677")) +
+  facet_wrap(~srvy_year) +
+  #labeling
+  # geom_text(aes(x = 0.3, 
+  #               y = 5, 
+  #               label = "2 Year Private"), 
+  #           size = 4, 
+  #           color = "#88CCEE") +
+  # geom_text(aes(x = 0.2, 
+  #               y = 8, 
+  #               label = "2 Year Public"), 
+  #           size = 4, 
+  #           color = "#DDCC77") +
+  # geom_text(aes(x = 0.15, 
+  #               y = 15, 
+  #               label = "4 Year Private"), 
+  #           size = 4, 
+  #           color = "#44AA99") +
+  # geom_text(aes(x = 0.15, 
+  #               y = 20, 
+  #               label = "4 Year Public"), # These keep turning out fuzzy
+  #           size = 4, 
+  #           color = "#CC6677") +
+  #theming
+  theme_classic(base_family = "Verdana") +
+  theme(#axis.text.y = element_blank(),
+        #axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = c(0.75, 0.3),
+        legend.title = element_text(color = "#8e8d8a", size = 10),
+        legend.text = element_text(color = "#8e8d8a", size = 10),
+        legend.background = element_rect(fill = "#eae7dc"),
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        panel.grid.major.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.major.y = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.y = element_line(size = .1, color = "#d8c3a5"),
+        plot.title = element_text(size = 15, hjust = 0.5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a")) +
+  #titles
+  labs(x = "Average enrollment in language courses",
+       y = "Height indicates higher density of institutions",
+       title = "What types of colleges are language majors attending?",
+       subtitle = "Two year colleges show pronounced increase in average enrollment \n of language courses over time in the United States, although four-year \n institutions account for a larger number of enrollments overall.",
+       caption = "Data Source: National Center for Education Statistics") +
+  #animation
+  facet_null() +
+  geom_text(x = 0.75 , 
+            y = 21,
+            family = "Helvetica",
+            aes(label = as.character(srvy_year)),
+            size = 30, 
+            color = "#e98074") +
+  aes(group = sector) +
+  transition_time(srvy_year)
+
+# Save animation
+ animate(viz3f_ne, nframes = 350, fps = 25, width = 500, height = 500,
+         renderer = gifski_renderer("viz3f_final_anim.gif"))
+```
