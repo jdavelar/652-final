@@ -2,7 +2,7 @@
 title: "Language Enrollment in Higher Education"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
     vertical_layout: scroll
     theme: united # Mess with theme
     social: menu
@@ -20,7 +20,8 @@ library(png)
 library(maps)
 library(mapproj)
 library(ggthemes)
-library(ragg) #?????
+library(statebins)
+library(ragg) # R Kept telling me I needed this loaded but I'm not sure why?
 ```
 
 ```{r Data Import, include = FALSE}
@@ -75,24 +76,16 @@ The hope is that the larger language trends offer a starting point. Though we ca
 Heritage Language Maintenance {data-orientation=rows}
 =======================================================================
 
-Row
------------------------------------------------------------------------
 ### What is a heritage language and why do we need to maintain it?
 [some stuff will go here]
-
-Row
------------------------------------------------------------------------
 
 ### How is a heritage language learner different from a second language learner?
 [some more stuff will go here]
 
-Row
-----------------------------------------------------------------------
-
 ### Why does it matter?
 [and here]
 
-Viz 1
+Viz 1: Language
 =======================================================================
 
 ```{r Viz 1 Draft Data Prep}
@@ -139,7 +132,7 @@ ltviz$language[ltviz$language == "ARABIC"] <- "Arabic"
 ```
 
 
-Column {.tabset }
+Row {.tabset }
 -----------------------------------------------------------------------
 
 ### Final Version
@@ -220,9 +213,6 @@ animate(anim_1f, nframes = 350, fps = 25, width = 500, height = 500,
 
 ![Viz 1 Final](viz1_final.gif)
 
-Column
------------------------------------------------------------------------
-
 ### Draft Version
 
 ```{r Viz 1 Draft Version}
@@ -281,17 +271,18 @@ Visualization 1 comes from humble origins. My first attempt at working with the 
 
 Viz 1 still has a long way to go. From here, I plan to tweak colors and themes in order to make it more visually appealing and easy to read. I'm fairly happy with the speed, but there's a lot of small things that need to be adjusted. The y-axis, for one, needs a lot of work and commas need to be placed in the number. As a reviewer, there is one specific thing that would be really helpful for me if you could weigh in on: is it easier to understand this animation if the label next to the bars displays total enrollments or a breakdown of proportion (as the percentage that each language accounts for from total non-English language enrollments)?
 
-Viz 2
+Viz 2: Geography
 =====================================================================
 
 ```{r Viz 2 Draft Data Prep}
 # Map data for literal map
 states <- map_data("state")
 
-states %>% ggplot(aes(long, lat, map_id = region)) +
-  geom_map(map = states,
-           color = "gray80", fill = "gray30", size = 0.3) +
-  coord_map("ortho", orientation = c(39, -98, 0))
+# Map to work from
+# states %>% ggplot(aes(long, lat, map_id = region)) +
+#   geom_map(map = states,
+#            color = "gray80", fill = "gray30", size = 0.3) +
+#   coord_map("ortho", orientation = c(39, -98, 0))
 
 # Adjusting enroll data for joining
 enroll_map <- enroll %>% 
@@ -404,8 +395,6 @@ viz2_map <- left_join(states, viz2, by = "region")
 ```
 
 ```{r Viz 2 Final Data Prep}
-library(statebins)
-
 # Adjusting enrollment data by collapsing totals per year by institution
 viz2f_data <- enroll %>% 
   select(srvy_year, nces_id, all_level_total, state) %>%
@@ -428,7 +417,7 @@ viz2f_data <- enroll %>%
 ```
 
 
-Column {.tabset}
+Row {.tabset}
 -----------------------------------------------------------------------
 
 ### Final Version
@@ -467,9 +456,6 @@ ggsave("viz2_final.jpg", plot = viz2f)
 ```
 
 ![Viz 2 Final](viz2_final.jpg)
-
-Column
------------------------------------------------------------------------
 
 ### Draft Version
 
@@ -512,7 +498,14 @@ ggsave("viz2.jpg", plot = viz2)
 
 ![Viz 2](viz2.jpg)
 
-Viz 3
+Row
+-----------------------------------------------------------------------
+### Visualization 2:
+
+### The Journey:
+
+
+Viz 3: Institutions
 =====================================================================
 
 ```{r Viz 3 Draft Data Prep}
@@ -633,23 +626,110 @@ ic_vdata$geography_code[ic_vdata$geography_code == 6] <- "Pacific"
 ```
 
 ```{r Viz 3 Final Data Prep}
+# Join datasets to include geography codes, enrollment, students, and sector
+viz3final_data <- left_join(ic_join, ic, by = "unitid") %>% 
+  select(-c(2, 6, 8)) %>% 
+  group_by(unitid, srvy_year) %>% 
+  mutate(all_level_total = sum(all_level_total, na.rm = T)) %>% 
+  ungroup() %>% 
+  unique() %>% 
+  mutate(avg_enroll = all_level_total/students) %>%  # average enrollment
+  filter(sector == "4 Year Public" |
+         sector == "2 Year Public" |
+         sector == "4 Year Private" |
+         sector == "2 Year Private") # snag variables I'm interested in
 
+# Recode geo_code
+viz3final_data$geography_code[viz3final_data$geography_code == 1] <- "Northeast"
+viz3final_data$geography_code[viz3final_data$geography_code == 2] <- "Midwest"
+viz3final_data$geography_code[viz3final_data$geography_code == 3] <- "Southeast"
+viz3final_data$geography_code[viz3final_data$geography_code == 4] <- "Southwest"
+viz3final_data$geography_code[viz3final_data$geography_code == 5] <- "Rocky Mountain"
+viz3final_data$geography_code[viz3final_data$geography_code == 6] <- "Pacific"
 ```
 
 
-Column
+Row {.tabset}
 -----------------------------------------------------------------------
 
 ### Final Version
 
 ```{r Viz 3 Final Version}
+# Final plot
+viz3f_ne <-
+ggplot(viz3final_data, aes(avg_enroll, color = sector)) +
+  geom_density(aes(fill = sector), alpha = 0.2) +
+  xlim(-.1, 1) +
+  ylim(0, 50) +
+  scale_color_manual(values = c("#88CCEE", "#DDCC77", "#44AA99", "#CC6677")) +
+  scale_fill_manual(values = c("#88CCEE", "#DDCC77", "#44AA99", "#CC6677")) +
+  facet_wrap(~srvy_year) +
+  #labeling
+  geom_text(aes(x = 0.3, 
+                y = 5, 
+                label = "2 Year Private"), 
+            size = 4, 
+            color = "#88CCEE") +
+  geom_text(aes(x = 0.2, 
+                y = 8, 
+                label = "2 Year Public"), 
+            size = 4, 
+            color = "#DDCC77") +
+  geom_text(aes(x = 0.15, 
+                y = 15, 
+                label = "4 Year Private"), 
+            size = 4, 
+            color = "#44AA99") +
+  geom_text(aes(x = 0.15, 
+                y = 20, 
+                label = "4 Year Public"), 
+            size = 4, 
+            color = "#CC6677") +
+  #theming
+  theme_classic(base_family = "Verdana") +
+  theme(#axis.text.y = element_blank(),
+        #axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = c(0.75, 0.3),
+        legend.title = element_text(color = "#8e8d8a", size = 10),
+        legend.text = element_text(color = "#8e8d8a", size = 10),
+        legend.background = element_rect(fill = "#eae7dc"),
+        plot.background = element_rect(fill = "#eae7dc"),
+        panel.background = element_rect(fill = "#eae7dc"),
+        panel.grid.major.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.x = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.major.y = element_line(size = .1, color = "#d8c3a5"),
+        panel.grid.minor.y = element_line(size = .1, color = "#d8c3a5"),
+        plot.title = element_text(size = 15, hjust = 0.5, 
+                                  face = "bold", color = "#e85a4f", vjust = 0),
+        plot.subtitle = element_text(size = 10, hjust = 0.5, color = "#8e8d8a"),
+        plot.caption = element_text(color = "#8e8d8a")) +
+  scale_x_continuous(labels = scales::percent) +
+  #titles
+  labs(x = "Average enrollment in language courses",
+       y = "Height indicates higher density of institutions",
+       title = "What type of college are language majors attending?",
+       subtitle = "Two year colleges show pronounced increase in average enrollment \n of language courses over time in the United States, although four-year \n institutions account for a larger number of enrollments overall.",
+       caption = "Data Source: National Center for Education Statistics") +
+  #animation
+  facet_null() +
+  geom_text(x = 0.75 , 
+            y = 40,
+            family = "Helvetica",
+            aes(label = as.character(srvy_year)),
+            size = 30, 
+            color = "#e98074") +
+  aes(group = sector) +
+  transition_time(srvy_year)
 
+# Save animation
+ animate(viz3f_ne, nframes = 350, fps = 25, width = 500, height = 500,
+         renderer = gifski_renderer("viz3f_final_anim.gif"))
 ```
 
-Column {.tabset}
------------------------------------------------------------------------
+![Viz 3 Final](viz3f_final_anim.gif)
 
-### Draft 1
+### Draft Version
 
 ```{r Viz 3 Draft Version}
 # Let's try geom_jitter across years
@@ -676,10 +756,9 @@ animate(viz3, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 
 ![Viz 3](viz3.gif)
 
-Column
------------------------------------------------------------------------
+### Fun Version
 
-### Draft 2
+Just as a reminder of where I started.
 
 ```{r Viz 3 Fun Version}
 # sector totals?
@@ -726,3 +805,9 @@ animate(viz3f, nframes = 350, fps = 25, width = 800, height = 600, #nframes
 ```
 
 ![Viz 3](viz3_final.gif)
+
+Row
+-----------------------------------------------------------------------
+### Visualization 3:
+
+### The Journey:
